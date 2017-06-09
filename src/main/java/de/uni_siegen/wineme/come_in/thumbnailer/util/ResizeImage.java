@@ -85,7 +85,7 @@ public class ResizeImage {
 	public static final int ALLOW_SMALLER = 32;
 	
 	public int resizeMethod = RESIZE_FIT_ONE_DIMENSION;
-	public int extraOptions = DO_NOT_SCALE_UP;
+	public int extraOptions = 0;
 	
 	private int scaledWidth;
 	private int scaledHeight;
