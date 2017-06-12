@@ -32,23 +32,15 @@ configurations.all {
 // In this section you declare the dependencies for your production and test code
 dependencies {
 	compile fileTree(dir: 'libs', include: '*.jar')
-
-	compile group: 'kirasystems', name: 'jodconverter-core', version: '3.0.1'
+	compile group:'org.jodconverter', name: 'jodconverter-core',version: '4.0.0-RELEASE'
 	compile group: 'org.apache.pdfbox', name: 'pdfbox', version: '1.6.0'
 	compile group: 'org.apache.poi', name: 'poi', version: '3.8'
 	compile group: 'org.apache.poi', name: 'poi-scratchpad', version: '3.8'
 	compile group: 'org.semweb4j', name: 'rdf2go.api', version: '4.6.2'
-
 	compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
 	compile group: 'commons-io', name: 'commons-io', version: '1.4'
-	
 	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.2'
 	compile group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.2'
 
-    // Declare the dependency for your favourite test framework you want to use in your tests.
-    // TestNG is also supported by the Gradle Test task. Just change the
-    // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
-    // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
-    testCompile group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
 }

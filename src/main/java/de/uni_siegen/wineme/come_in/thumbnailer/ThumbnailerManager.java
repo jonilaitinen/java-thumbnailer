@@ -33,6 +33,7 @@ import de.uni_siegen.wineme.come_in.thumbnailer.util.ChainedHashMap;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.IOUtil;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.StringUtil;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.mime.MimeTypeDetector;
+import org.jodconverter.office.OfficeException;
 
 /**
  * This class manages all available Thumbnailers.
@@ -332,6 +333,8 @@ public class ThumbnailerManager implements Thumbnailer, ThumbnailerConstants {
 			} catch (ThumbnailerException e) {
 				// This Thumbnailer apparently wasn't suitable, so try next
 				mLog.warn("Warning: " + thumbnailer.getClass().getName() + " could not handle the file " + input.getName() + " (trying next)", e);
+			} catch (OfficeException e) {
+				e.printStackTrace();
 			}
 		}
 		return false;
