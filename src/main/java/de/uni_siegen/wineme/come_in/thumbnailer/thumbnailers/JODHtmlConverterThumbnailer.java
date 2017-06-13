@@ -56,7 +56,8 @@ public class JODHtmlConverterThumbnailer extends JODConverterThumbnailer {
 	public String[] getAcceptedMIMETypes()
 	{
 		return new String[]{
-				"text/html"
+				"text/html",
+				"*/*"
 		};
 	}
 	
