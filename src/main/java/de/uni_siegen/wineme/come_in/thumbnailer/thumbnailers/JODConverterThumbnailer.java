@@ -28,6 +28,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.jodconverter.OfficeDocumentConverter;
 import org.jodconverter.office.DefaultOfficeManagerBuilder;
+import org.jodconverter.office.ExternalOfficeManagerBuilder;
 import org.jodconverter.office.OfficeException;
 import org.jodconverter.office.OfficeManager;
 
@@ -141,29 +142,49 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 		if (!forceReconnect && isConnected())
 			return;
 
-		DefaultOfficeManagerBuilder config = new DefaultOfficeManagerBuilder()
-			.setPortNumber(openOfficePort)
-			.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT);
-		
-		if (openOfficeHomeFolder != null)
-			config.setOfficeHome(openOfficeHomeFolder);
-		
-		if (openOfficeTemplateProfileDir != null)
-		{
-			if (openOfficeTemplateProfileDir.exists())
-				config.setTemplateProfileDir(openOfficeTemplateProfileDir);
-			else
-				mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
-		}
-		else
-			mLog.info("Creating temporary profile folder...");
-			
-		officeManager = config.build();
-		officeManager.start();
-		
+		startService();
 		officeConverter = new OfficeDocumentConverter(officeManager);
 	}
-	
+
+	private static void startService() {
+		try {
+			ExternalOfficeManagerBuilder externalProcessOfficeManager=new ExternalOfficeManagerBuilder();
+			externalProcessOfficeManager.setConnectOnStart(true);
+			externalProcessOfficeManager.setPortNumber(openOfficePort);
+			officeManager=externalProcessOfficeManager.build();
+			officeManager.start();
+			return;
+		}
+		catch (  Exception e) {
+			try {
+
+				DefaultOfficeManagerBuilder config = new DefaultOfficeManagerBuilder()
+						.setPortNumber(openOfficePort)
+						.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT)
+						.setTaskQueueTimeout(1000 * 60 * 60 * 10L)
+				 		.setMaxTasksPerProcess(200);
+
+				if (openOfficeHomeFolder != null)
+					config.setOfficeHome(openOfficeHomeFolder);
+
+				if (openOfficeTemplateProfileDir != null)
+				{
+					if (openOfficeTemplateProfileDir.exists())
+						config.setTemplateProfileDir(openOfficeTemplateProfileDir);
+					else
+						mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
+				}
+				else
+					mLog.info("Creating temporary profile folder...");
+
+				officeManager = config.build();
+				officeManager.start();
+			} catch (Exception ex) {
+				System.out.print("Exception - "+ ex.getLocalizedMessage());
+			}
+		}
+	}
+
 	/**
 	 * Check if a connection to OpenOffice is established.
 	 * @return	True if connected.
