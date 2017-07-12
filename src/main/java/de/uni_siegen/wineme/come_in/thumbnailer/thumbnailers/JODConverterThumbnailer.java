@@ -148,39 +148,38 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 
 	private static void startService() {
 		try {
-			ExternalOfficeManagerBuilder externalProcessOfficeManager=new ExternalOfficeManagerBuilder();
-			externalProcessOfficeManager.setConnectOnStart(true);
-			externalProcessOfficeManager.setPortNumber(openOfficePort);
-			officeManager=externalProcessOfficeManager.build();
-			officeManager.start();
-			return;
-		}
-		catch (  Exception e) {
-			try {
 
-				DefaultOfficeManagerBuilder config = new DefaultOfficeManagerBuilder()
-						.setPortNumber(openOfficePort)
-						.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT)
-						.setTaskQueueTimeout(1000 * 60 * 60 * 10L)
-				 		.setMaxTasksPerProcess(200);
+			DefaultOfficeManagerBuilder config = new DefaultOfficeManagerBuilder()
+					.setPortNumber(openOfficePort)
+					.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT)
+					.setTaskQueueTimeout(1000 * 60 * 60 * 10L)
+					.setMaxTasksPerProcess(200);
 
-				if (openOfficeHomeFolder != null)
-					config.setOfficeHome(openOfficeHomeFolder);
+			if (openOfficeHomeFolder != null)
+				config.setOfficeHome(openOfficeHomeFolder);
 
-				if (openOfficeTemplateProfileDir != null)
-				{
-					if (openOfficeTemplateProfileDir.exists())
-						config.setTemplateProfileDir(openOfficeTemplateProfileDir);
-					else
-						mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
-				}
+			if (openOfficeTemplateProfileDir != null)
+			{
+				if (openOfficeTemplateProfileDir.exists())
+					config.setTemplateProfileDir(openOfficeTemplateProfileDir);
 				else
-					mLog.info("Creating temporary profile folder...");
+					mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
+			}
+			else
+				mLog.info("Creating temporary profile folder...");
 
-				officeManager = config.build();
+			officeManager = config.build();
+			officeManager.start();
+		} catch (Exception ex) {
+			mLog.error("Failed to create connection, lets try with external connection.");
+			try {
+				ExternalOfficeManagerBuilder externalProcessOfficeManager = new ExternalOfficeManagerBuilder();
+				externalProcessOfficeManager.setConnectOnStart(true);
+				externalProcessOfficeManager.setPortNumber(openOfficePort);
+				officeManager = externalProcessOfficeManager.build();
 				officeManager.start();
-			} catch (Exception ex) {
-				System.out.print("Exception - "+ ex.getLocalizedMessage());
+			} catch (Exception e) {
+				mLog.error("Failed to create external connection.");
 			}
 		}
 	}
@@ -259,6 +258,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 			ooo_thumbnailer.generateThumbnail(outputTmp, output);
 		} finally {
 			IOUtil.deleteQuietlyForce(outputTmp);
+			this.close();
 		}
 	}
 
