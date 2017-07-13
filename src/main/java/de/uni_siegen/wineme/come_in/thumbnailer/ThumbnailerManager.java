@@ -30,9 +30,9 @@ import org.apache.log4j.Logger;
 
 import de.uni_siegen.wineme.come_in.thumbnailer.thumbnailers.Thumbnailer;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.ChainedHashMap;
-import de.uni_siegen.wineme.come_in.thumbnailer.util.IOUtil;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.StringUtil;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.mime.MimeTypeDetector;
+import org.jodconverter.office.OfficeException;
 
 /**
  * This class manages all available Thumbnailers.
@@ -103,10 +103,12 @@ public class ThumbnailerManager implements Thumbnailer, ThumbnailerConstants {
 	 */
 	public ThumbnailerManager()
 	{
+		final ThumbnailerManager self = this;
 		// Execute close() when JVM shuts down (if it wasn't executed before).
-		final ThumbnailerManager self = this; 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
-		    public void run() { IOUtil.quietlyClose(self); }
+		    public void run() {
+		    	close();
+		    }
 		});
 		
 		thumbnailers = new ChainedHashMap<String, Thumbnailer>(DEFAULT_NB_MIME_TYPES, DEFAULT_NB_THUMBNAILERS_PER_MIME);
@@ -117,12 +119,7 @@ public class ThumbnailerManager implements Thumbnailer, ThumbnailerConstants {
 		thumbHeight = THUMBNAIL_DEFAULT_HEIGHT;
 		thumbWidth = THUMBNAIL_DEFAULT_WIDTH;
 	}
-/* currently not used
-	private static String generate_hash(String str)
-	{
-		return StringUtil.transpose_string(StringUtil.md5(str));
-	}
-*/
+
 	/**
 	 * Calculate a thumbnail filename (via hashing).
 	 * 
@@ -332,6 +329,8 @@ public class ThumbnailerManager implements Thumbnailer, ThumbnailerConstants {
 			} catch (ThumbnailerException e) {
 				// This Thumbnailer apparently wasn't suitable, so try next
 				mLog.warn("Warning: " + thumbnailer.getClass().getName() + " could not handle the file " + input.getName() + " (trying next)", e);
+			} catch (OfficeException e) {
+				e.printStackTrace();
 			}
 		}
 		return false;

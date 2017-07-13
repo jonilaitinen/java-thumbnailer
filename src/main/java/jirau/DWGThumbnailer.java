@@ -68,6 +68,7 @@ public class DWGThumbnailer extends AbstractThumbnailer {
 				BufferedImage originalImage = ImageIO.read(bais);
 				
 				ResizeImage resizer = new ResizeImage(thumbWidth, thumbHeight);
+				resizer.resizeMethod = ResizeImage.RESIZE_FIT_BOTH_DIMENSIONS;
 				resizer.setInputImage(originalImage);
 				resizer.writeOutput(output);
 			}

@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import de.uni_siegen.wineme.come_in.thumbnailer.ThumbnailerConstants;
 import de.uni_siegen.wineme.come_in.thumbnailer.ThumbnailerException;
+import org.jodconverter.office.OfficeException;
 
 /**
  * This AbstractThumbnailer may be used in order to implement only essential methods.
@@ -148,7 +149,7 @@ public abstract class AbstractThumbnailer implements Thumbnailer, ThumbnailerCon
 	 * @throws IOException			If file cannot be read/written
 	 * @throws ThumbnailerException If the thumbnailing process failed.
 	 */
-	public void generateThumbnail(File input, File output, String mimeType) throws IOException, ThumbnailerException {
+	public void generateThumbnail(File input, File output, String mimeType) throws IOException, ThumbnailerException, OfficeException {
 		// Ignore MIME-Type-Hint
 		generateThumbnail(input, output);
 	}

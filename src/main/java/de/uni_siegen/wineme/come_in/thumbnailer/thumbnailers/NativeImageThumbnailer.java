@@ -41,6 +41,7 @@ public class NativeImageThumbnailer extends AbstractThumbnailer {
 
 	public void generateThumbnail(File input, File output) throws IOException, ThumbnailerException {
 		ResizeImage resizer = new ResizeImage(thumbWidth, thumbHeight);
+		resizer.resizeMethod = ResizeImage.RESIZE_FIT_BOTH_DIMENSIONS;
 		
 		try {
 			resizer.setInputImage(input);

@@ -26,10 +26,11 @@ import java.io.IOException;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
-import org.artofsolving.jodconverter.OfficeDocumentConverter;
-import org.artofsolving.jodconverter.office.DefaultOfficeManagerConfiguration;
-import org.artofsolving.jodconverter.office.OfficeException;
-import org.artofsolving.jodconverter.office.OfficeManager;
+import org.jodconverter.OfficeDocumentConverter;
+import org.jodconverter.office.DefaultOfficeManagerBuilder;
+import org.jodconverter.office.ExternalOfficeManagerBuilder;
+import org.jodconverter.office.OfficeException;
+import org.jodconverter.office.OfficeManager;
 
 import de.uni_siegen.wineme.come_in.thumbnailer.ThumbnailerException;
 import de.uni_siegen.wineme.come_in.thumbnailer.util.mime.MimeTypeDetector;
@@ -131,40 +132,58 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 	 * Start OpenOffice-Service and connect to it.
 	 * (Does not reconnect if already connected.)
 	 */
-	public static void connect() { 	connect(false); }
+	public static void connect() throws OfficeException { 	connect(false); }
 	
 	/**
 	 * Start OpenOffice-Service and connect to it.
 	 * @param forceReconnect	Connect even if he is already connected.
 	 */
-	public static void connect(boolean forceReconnect)
-	{
+	public static void connect(boolean forceReconnect) throws OfficeException {
 		if (!forceReconnect && isConnected())
 			return;
-		
-		DefaultOfficeManagerConfiguration config = new DefaultOfficeManagerConfiguration()
-			.setPortNumber(openOfficePort)
-			.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT);
-		
-		if (openOfficeHomeFolder != null)
-			config.setOfficeHome(openOfficeHomeFolder);
-		
-		if (openOfficeTemplateProfileDir != null)
-		{
-			if (openOfficeTemplateProfileDir.exists())
-				config.setTemplateProfileDir(openOfficeTemplateProfileDir);
-			else
-				mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
-		}
-		else
-			mLog.info("Creating temporary profile folder...");
-			
-		officeManager = config.buildOfficeManager();
-		officeManager.start();
-		
+
+		startService();
 		officeConverter = new OfficeDocumentConverter(officeManager);
 	}
-	
+
+	private static void startService() {
+		try {
+
+			DefaultOfficeManagerBuilder config = new DefaultOfficeManagerBuilder()
+					.setPortNumber(openOfficePort)
+					.setTaskExecutionTimeout(JOD_DOCUMENT_TIMEOUT)
+					.setTaskQueueTimeout(1000 * 60 * 60 * 10L)
+					.setMaxTasksPerProcess(200);
+
+			if (openOfficeHomeFolder != null)
+				config.setOfficeHome(openOfficeHomeFolder);
+
+			if (openOfficeTemplateProfileDir != null)
+			{
+				if (openOfficeTemplateProfileDir.exists())
+					config.setTemplateProfileDir(openOfficeTemplateProfileDir);
+				else
+					mLog.info("No Template Profile Folder found at " + openOfficeTemplateProfileDir.getAbsolutePath() + " - Creating temporary one.");
+			}
+			else
+				mLog.info("Creating temporary profile folder...");
+
+			officeManager = config.build();
+			officeManager.start();
+		} catch (Exception ex) {
+			mLog.error("Failed to create connection, lets try with external connection.");
+			try {
+				ExternalOfficeManagerBuilder externalProcessOfficeManager = new ExternalOfficeManagerBuilder();
+				externalProcessOfficeManager.setConnectOnStart(true);
+				externalProcessOfficeManager.setPortNumber(openOfficePort);
+				officeManager = externalProcessOfficeManager.build();
+				officeManager.start();
+			} catch (Exception e) {
+				mLog.error("Failed to create external connection.");
+			}
+		}
+	}
+
 	/**
 	 * Check if a connection to OpenOffice is established.
 	 * @return	True if connected.
@@ -177,8 +196,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 	/**
 	 * Stop the OpenOffice Process and disconnect.
 	 */
-	public static void disconnect()
-	{
+	public static void disconnect() throws OfficeException {
 		// close the connection
 		if (officeManager != null)
 			officeManager.stop();
@@ -192,7 +210,11 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 				temporaryFilesManager.deleteAllTempfiles();
 				ooo_thumbnailer.close();
 			} finally {
-				disconnect();
+				try {
+					disconnect();
+				} catch (OfficeException e) {
+					e.printStackTrace();
+				}
 			}
 		} finally {
 			super.close();
@@ -210,7 +232,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 	 * @throws ThumbnailerException If the thumbnailing process failed.
 	 */
 	@Override
-	public void generateThumbnail(File input, File output) throws IOException, ThumbnailerException {
+	public void generateThumbnail(File input, File output) throws IOException, ThumbnailerException, OfficeException {
 		// Connect on first use
 		if (!isConnected())
 			connect();
@@ -236,6 +258,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 			ooo_thumbnailer.generateThumbnail(outputTmp, output);
 		} finally {
 			IOUtil.deleteQuietlyForce(outputTmp);
+			this.close();
 		}
 	}
 
@@ -249,7 +272,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 	 * @throws IOException			If file cannot be read/written
 	 * @throws ThumbnailerException If the thumbnailing process failed.
 	 */
-	public void generateThumbnail(File input, File output, String mimeType) throws IOException, ThumbnailerException {
+	public void generateThumbnail(File input, File output, String mimeType) throws IOException, ThumbnailerException, OfficeException {
 		String ext = FilenameUtils.getExtension(input.getName());
 		if (!mimeTypeDetector.doesExtensionMatchMimeType(ext, mimeType))
 		{
