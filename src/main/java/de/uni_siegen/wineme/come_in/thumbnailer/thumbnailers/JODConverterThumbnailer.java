@@ -258,7 +258,7 @@ public abstract class JODConverterThumbnailer extends AbstractThumbnailer {
 			ooo_thumbnailer.generateThumbnail(outputTmp, output);
 		} finally {
 			IOUtil.deleteQuietlyForce(outputTmp);
-			this.close();
+			//this.close();
 		}
 	}
 
